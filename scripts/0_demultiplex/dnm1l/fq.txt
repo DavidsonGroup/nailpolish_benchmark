@@ -1,0 +1,11 @@
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode01_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode02_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode03_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode04_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode05_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode06_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode07_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode08_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode09_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode10_merged.fastq.gz
+/vast/projects/davidson_longread/yan.a/Max_2nd/fastq/merged/barcode11_merged.fastq.gz

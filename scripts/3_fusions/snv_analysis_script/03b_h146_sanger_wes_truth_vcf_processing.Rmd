@@ -1,0 +1,272 @@
+---
+title: "03b_h146_sanger_wes_truth_vcf_processing"
+author: "jw"
+date: "2026-09-12"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
+
+library(tidyverse)
+```
+
+```{r}
+#-------------------------
+# CONFIGURATION
+#-------------------------
+results_root <- "/vast/projects/davidson_longread/tan.j/nailpolish_analysis"
+
+snp_out <- Sys.getenv("SNP_OUT", unset = file.path(results_root, "output", "SNV"))
+out_dir <- file.path(snp_out, "ref")
+dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+
+SANGER_VCF <- file.path(results_root, "ref",
+                        "SIDM00698_Sanger_wes_snp_vaf.caveman_c.annot_drv.vcf")
+
+# cgpVaf writes the sample columns under their SampleName, not under NORMAL/TUMOUR
+# The ##SAMPLE header lines map them: PDv38is_wes_v2 is ID=NORMAL, NCI-H146 is ID=TUMOUR1
+TUMOUR_COL <- "NCI-H146"
+NORMAL_COL <- "PDv38is_wes_v2"
+
+# LongBench's reference. The .fai supplies ##contig header lines and the contig-name check
+REF_FAI <- file.path(results_root, "ref",
+                     "GRCh38.primary_assembly.genome.add.spikein.fa.fai")
+
+# Merged GENCODE v49 exons
+EXONS_BED <- file.path(out_dir, "exons.bed")
+
+SAMPLE_NAME <- "H146"
+out_vcf     <- file.path(out_dir, "H146_SangerWES.raw.vcf")
+out_tsv     <- file.path(out_dir, "H146_sanger_wes_truth_table.tsv")
+
+# Truth-side depth gate
+MIN_TRUTH_DEP <- 10
+
+# Regression guards
+EXPECTED_N        <- 2414
+EXPECTED_NPGL     <- 638
+EXPECTED_DRV      <- 7
+EXPECTED_EXONIC   <- 1000
+EXPECTED_DP_OK    <- 1639
+
+# cgpVaf FORMAT, identical on all 2,414 records
+EXPECTED_FORMAT <- "FAZ:FCZ:FGZ:FTZ:RAZ:RCZ:RGZ:RTZ:MTR:WTR:DEP:MDR:WDR:VAF:OFS"
+
+stopifnot(file.exists(SANGER_VCF), file.exists(REF_FAI), file.exists(EXONS_BED))
+```
+
+```{r}
+#-------------------------
+# HELPERS
+#-------------------------
+# Pull one key out of a VCF INFO string. Returns NA when the key is absent rather than erroring, so a record missing VD does not take the whole document down
+
+# The (^|;) anchor is LOAD-BEARING on this file and must not be simplified to str_extract(INFO, "VD=[^;]*"): the INFO field also carries NVD= (number of samples with variant-read depth), and an unanchored "VD=" matches inside it. The unanchored version returns "1" as the gene symbol for every record, silently and plausibly
+info_field <- function(info, key) {
+  pat <- paste0("(^|;)", key, "=([^;]*)")
+  out <- str_match(info, pat)[, 3]
+  ifelse(is.na(out) | out %in% c("", "nan"), NA_character_, out)
+}
+
+# Valueless INFO flags (NPGL, DRV, CPV). Same anchoring requirement, both ends this time
+info_flag <- function(info, key) {
+  str_detect(info, paste0("(^|;)", key, "(;|$)"))
+}
+
+# n-th pipe-delimited field of a VAGrENT annotation string GENE|CCDS|r.HGVS|c.HGVS|p.HGVS|biotype:region:...|SO_terms
+vagrent_field <- function(x, i) {
+  out <- map_chr(str_split(x, fixed("|")), ~ if (length(.x) >= i) .x[[i]] else NA_character_)
+  # "-" is VAGrENT's placeholder for "not applicable" (intronic records have no p. change).
+  na_if(na_if(out, "-"), "")
+}
+
+# SNP / indel / other from REF and ALT lengths
+variant_type <- function(ref, alt) {
+  case_when(nchar(ref) == 1 & nchar(alt) == 1 ~ "SNP",
+            nchar(ref) != nchar(alt)          ~ "indel",
+            TRUE                              ~ "other")
+}
+
+# Membership of a position in a SORTED, MERGED BED
+in_merged_bed <- function(chrom, pos, bed) {
+  out <- logical(length(pos))
+  for (ct in intersect(unique(chrom), bed$chrom)) {
+    b <- bed %>% filter(chrom == ct)
+    i <- which(chrom == ct)
+    # BED is 0-based half-open: [start, end) covers 1-based positions start+1 .. end.
+    j  <- findInterval(pos[i], b$start + 1L)
+    ok <- j > 0
+    out[i[ok]] <- pos[i][ok] <= b$end[j[ok]]
+  }
+  out
+}
+```
+
+# 2. Parse the Sanger WES VCF
+```{r}
+vcf <- read_tsv(SANGER_VCF, comment = "##",
+                col_types = cols(.default = col_character()), progress = FALSE)
+names(vcf)[1] <- "CHROM"
+
+stopifnot(all(c(TUMOUR_COL, NORMAL_COL) %in% names(vcf)))
+stopifnot(n_distinct(vcf$FORMAT) == 1, vcf$FORMAT[1] == EXPECTED_FORMAT)
+
+fmt <- str_split_1(EXPECTED_FORMAT, fixed(":"))
+split_sample <- function(col, prefix) {
+  parts <- str_split_fixed(col, fixed(":"), length(fmt))
+  colnames(parts) <- paste0(prefix, fmt)
+  as_tibble(parts)
+}
+
+truth <- vcf %>%
+  bind_cols(split_sample(vcf[[TUMOUR_COL]], "t_"),
+            split_sample(vcf[[NORMAL_COL]], "n_")) %>%
+  mutate(
+    POS   = as.numeric(POS),
+    key   = paste(CHROM, POS, REF, ALT, sep = ":"),
+
+    # Tumour evidence. DP is the TUMOUR depth (FORMAT DEP), deliberately not INFO/DP, which
+    # is the tumour+normal total and would overstate how well each site was interrogated
+    AF    = as.numeric(t_VAF),
+    DP    = as.numeric(t_DEP),
+    MTR   = as.numeric(t_MTR),
+    WTR   = as.numeric(t_WTR),
+    DP_normal = as.numeric(n_DEP),
+
+    VariantType   = variant_type(REF, ALT),
+    HugoSymbol    = vagrent_field(info_field(INFO, "VD"), 1),
+    ProteinChange = vagrent_field(info_field(INFO, "VD"), 5),
+    cDNAChange    = vagrent_field(info_field(INFO, "VD"), 4),
+    Consequence   = info_field(INFO, "VC"),
+    npgl          = info_flag(INFO, "NPGL"),
+    drv           = info_flag(INFO, "DRV"),
+    cpv           = info_flag(INFO, "CPV")
+  ) %>%
+  arrange(CHROM, POS)
+
+stopifnot(nrow(truth) == EXPECTED_N,
+          all(truth$FILTER == "PASS"),
+          !any(duplicated(truth$key)),
+          # SNV-only. If a future release adds indels this fires, and the results document's
+          # "all SNP" assertion and the CCLE-carries-the-indels framing both need revisiting.
+          all(truth$VariantType == "SNP"),
+          !any(is.na(truth$HugoSymbol)))
+
+sprintf("%s: %d PASS SNVs on %d contigs",
+        TUMOUR_COL, nrow(truth), n_distinct(truth$CHROM))
+```
+
+```{r}
+# Contig naming must match the reference 
+fai_ctgs <- read.table(REF_FAI, sep = "\t", stringsAsFactors = FALSE)[[1]]
+stopifnot(length(setdiff(unique(truth$CHROM), fai_ctgs)) == 0)
+
+# chr1-22 + chrX only: no chrY (H146 is from a female donor), no chrM, no alt contigs
+stopifnot(all(truth$CHROM %in% c(paste0("chr", 1:22), "chrX")))
+
+# Hard guard
+# PDv38is_wes_v2 is Sanger's synthetic in-silico unmatched normal, not a matched normal for H146. It has real depth, so it looks usable, but it carries zero variant reads at every site by construction. That is why the `NPGL` flag is used instead, and why no clean germline/somatic split is claimed anywhere downstream. If a future Cell Model Passports release ships a genuinely matched normal, this guard stops the document, because at that point the germline logic below is wrong in an interesting way (a real normal genotype beats the NPGL panel flag) and should be revisited rather than silently ignored
+if (any(as.numeric(truth$n_MTR) > 0)) {
+  stop("the NORMAL column ", NORMAL_COL, " carries variant reads at ",
+       sum(as.numeric(truth$n_MTR) > 0), " sites - it is no longer the synthetic unmatched ",
+       "normal this document assumes. Revisit the germline logic before trusting any output.")
+}
+```
+
+# 2. Annotation and strata
+```{r}
+exons <- read_tsv(EXONS_BED, col_names = c("chrom", "start", "end"),
+                  col_types = cols(chrom = col_character(),
+                                   start = col_double(), end = col_double()),
+                  progress = FALSE)
+
+# in_merged_bed() is only exact on sorted, disjoint intervals
+stopifnot(exons %>% group_by(chrom) %>%
+            summarise(ok = all(start == cummax(start)) && all(end[-n()] <= start[-1]),
+                      .groups = "drop") %>% pull(ok) %>% all())
+
+truth <- truth %>%
+  mutate(
+    exonic = in_merged_bed(CHROM, POS, exons),
+
+    # Truth-side depth gate. See the header: the high-VAF mode of this file is substantially
+    # a low-depth capture artefact, so "the truth set asserts this confidently" is a separate
+    # question from "our arms covered it".
+    dp_ok  = DP >= MIN_TRUTH_DEP,
+
+    # Descriptive only. These are NOT genotypes
+    vaf_stratum = cut(AF, c(-Inf, 0.25, 0.90, Inf),
+                      labels = c("subclonal (<0.25)", "het-like (0.25-0.90)",
+                                 "hom-like (>=0.90)")),
+    npgl_class  = if_else(npgl, "germline panel hit", "no panel hit")
+  )
+
+stopifnot(sum(truth$npgl)   == EXPECTED_NPGL,
+          sum(truth$drv)    == EXPECTED_DRV,
+          sum(truth$exonic) == EXPECTED_EXONIC,
+          sum(truth$dp_ok)  == EXPECTED_DP_OK)
+
+# CPV must be 0 and it is structural rather than incidental: both routes to a cancer-predisposition flag require VAF > 0.15 in a MATCHED Tumour/Normal pair, and this sample's normal is synthetic. A non-zero count therefore means the input gained a real matched normal, at which point the germline logic in this document is superseded by something better and should be revisited, not quietly kept.
+if (sum(truth$cpv) != 0) {
+  stop(sum(truth$cpv), " records carry the CPV flag. CPV requires a matched Tumour/Normal ",
+       "pair, so this file is no longer the unmatched-normal call set this document assumes. ",
+       "Revisit the NPGL-based stratification before trusting any output.")
+}
+
+# DRV/CPV take precedence over NPGL in Sanger's flagging order, so the three are mutually exclusive by construction. Asserted because the downstream npgl_class split silently assumes it: a DRV record sits in "no panel hit" whatever its population frequency
+stopifnot(!any(truth$npgl & truth$drv), !any(truth$npgl & truth$cpv))
+
+sprintf(paste("%d variants | %d NPGL | %d DRV | %d exonic | %d at tumour DEP >= %dx |",
+              "%d exonic AND DEP >= %dx"),
+        nrow(truth), sum(truth$npgl), sum(truth$drv), sum(truth$exonic),
+        sum(truth$dp_ok), MIN_TRUTH_DEP,
+        sum(truth$exonic & truth$dp_ok), MIN_TRUTH_DEP)
+```
+
+# 3. Write the truth VCF and table
+```{r}
+fai <- read.table(REF_FAI, sep = "\t", stringsAsFactors = FALSE)[, 1:2]
+nz  <- function(x, d = ".") ifelse(is.na(x) | x == "", d, as.character(x))
+
+con <- file(out_vcf, "w")
+writeLines(c(
+  "##fileformat=VCFv4.2",
+  sprintf("##fileDate=%s", format(Sys.Date(), "%Y%m%d")),
+  sprintf("##source=%s:%s", basename(SANGER_VCF), TUMOUR_COL),
+  "##reference=GRCh38.primary_assembly.genome.add.spikein",
+  sprintf("##contig=<ID=%s,length=%d>", fai[[1]], fai[[2]]),
+  '##INFO=<ID=GENE,Number=1,Type=String,Description="Gene symbol from the VAGrENT VD annotation">',
+  '##INFO=<ID=VC,Number=1,Type=String,Description="Variant consequence from the VAGrENT VD annotation">',
+  '##INFO=<ID=VTYPE,Number=1,Type=String,Description="SNP, indel or other">',
+  '##INFO=<ID=NPGL,Number=0,Type=Flag,Description="Normal Panel GermLine: present in Sanger germline normal panels. Marks common germline only; its absence does not imply somatic">',
+  '##INFO=<ID=DRV,Number=0,Type=Flag,Description="Variant is a cancer driver">',
+  '##INFO=<ID=EXONIC,Number=0,Type=Flag,Description="Position falls in a merged GENCODE v49 exon">',
+  sprintf('##FORMAT=<ID=VAF,Number=1,Type=Float,Description="Tumour variant allele fraction (cgpVaf)">'),
+  '##FORMAT=<ID=DEP,Number=1,Type=Integer,Description="Tumour read depth">',
+  '##FORMAT=<ID=MTR,Number=1,Type=Integer,Description="Tumour reads reporting the variant allele">',
+  paste0("#CHROM\tPOS\tID\tREF\tALT\tQUAL\tFILTER\tINFO\tFORMAT\t", SAMPLE_NAME)), con)
+
+writeLines(with(truth, paste(
+  CHROM,
+  # format(scientific = FALSE) matters: POS is numeric and a large position such as 156040895 would otherwise risk scientific notation in the VCF
+  format(POS, scientific = FALSE, trim = TRUE),
+  ".", REF, ALT, ".", "PASS",
+  paste0("GENE=", nz(HugoSymbol), ";VC=", nz(Consequence), ";VTYPE=", nz(VariantType),
+         ifelse(npgl, ";NPGL", ""), ifelse(drv, ";DRV", ""), ifelse(exonic, ";EXONIC", "")),
+  "VAF:DEP:MTR",
+  sprintf("%s:%s:%s", nz(AF), nz(DP), nz(MTR)),
+  sep = "\t")), con)
+close(con)
+
+sprintf("wrote %d records to %s", nrow(truth), out_vcf)
+
+# Plain TSV alongside the VCF so the results document can annotate hits with gene symbols, consequences and strata without re-parsing the VCF INFO. Column names match the CCLE truth table where the meaning is the same (key/CHROM/POS/REF/ALT/AF/DP/VariantType/HugoSymbol/ProteinChange), so the two panels in the results document can share helper code
+truth %>%
+  dplyr::select(key, CHROM, POS, REF, ALT, AF, DP, MTR, WTR, DP_normal,
+                VariantType, HugoSymbol, ProteinChange, cDNAChange, Consequence,
+                npgl, drv, npgl_class, vaf_stratum, exonic, dp_ok) %>%
+  write_tsv(out_tsv)
+
+sprintf("wrote %d rows to %s", nrow(truth), out_tsv)
+```
