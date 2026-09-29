@@ -1,0 +1,91 @@
+{
+  "longbench_bulk_H146": {
+    "path": "datasets/longbench_bulk_H146_proc.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "scmixology2": {
+    "path": "datasets/scmixology2.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "gridION": {
+    "path": "datasets/gridION.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "gridION_Q20": {
+    "path": "datasets/gridION_Q20.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "promethION": {
+    "path": "datasets/promethION.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "longbench_sc_ont": {
+    "path": "datasets/lb_sc_ont.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "longbench_sc_pb": {
+    "path": "datasets/lb_sc_pb.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "dnm1l_barcode01": {
+    "path": "datasets/dnm1l_barcode01.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf"
+  },
+  "lr-split-seq": {
+    "path": "datasets/lr-split-seq-tagged.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/GRCm38.p4.genome.fa",
+    "genome": "ref/GRCm38.p4.genome.fa",
+    "gtf": "ref/gencode.vM11.annotation.gtf",
+    "gene_gtf": "ref/gencode.vM11.annotation.genes_only.gtf"
+  },
+  "visium": {
+    "path": "datasets/visium_mob.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.vM38.transcripts.fa",
+    "genome": "ref/GRCm38.p4.genome.fa",
+    "gtf": "ref/gencode.vM11.annotation.gtf",
+    "gene_gtf": "ref/gencode.vM11.annotation.genes_only.gtf"
+  },
+  "rage-seq": {
+    "path": "datasets/rage-seq.fastq",
+    "barcode_regex": "\tCB:Z:(?<CB>[ATCGNX]+).*\tUB:Z:(?<UB>[ATCGNX]+)",
+    "transcriptome": "ref/gencode.v49.transcripts.fa",
+    "genome": "ref/GRCh38.p14.genome.fa",
+    "gtf": "ref/gencode.v49.annotation.gtf",
+    "gene_gtf": "ref/gencode.v49.annotation.genes_only.gtf",
+    "nailpolish_consensus_params": "--large-group-method sample"
+  }
+}

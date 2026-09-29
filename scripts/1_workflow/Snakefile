@@ -1,0 +1,59 @@
+import json
+from pathlib import Path
+
+config = {
+    "nailpolish": "/vast/projects/davidson_longread/cheng.o/proj/26.08.18-run-np/nailpolish_v0.2.2",
+    "outdir": "results",
+    "threads": 16,
+    "minimap_threads": 16
+}
+
+DATA_DIR = "/vast/projects/davidson_longread/cheng.o/proj/25.06.17-np-benchmark/datasets/"
+
+with open("samples.json") as _f:
+    SAMPLES = json.load(_f)
+
+for entry in SAMPLES.values():
+    for field in ("path", "transcriptome", "genome", "gtf"):
+        if field in entry and isinstance(entry[field], str):
+            entry[field] = str(Path(entry[field]).resolve())
+
+OUTDIR         = config["outdir"]
+NP_DIR         = OUTDIR + "/nailpolish"
+ALIGN_DIR      = OUTDIR + "/alignment"
+PROCESSING_DIR = OUTDIR + "/_processing"
+RESULTS_DIR    = OUTDIR + "/_results"
+BENCH_DIR      = OUTDIR + "/_benchmarks"
+QC_DIR         = OUTDIR + "/qc"
+UMITOOLS_DIR   = OUTDIR + "/umi_tools"
+SICELORE_DIR   = OUTDIR + "/sicelore"
+LOG_DIR        = OUTDIR + "/logs"
+        
+
+include: "rules/qc.smk"
+include: "rules/nailpolish.smk"
+include: "rules/alignment.smk"
+include: "rules/results.smk"
+include: "rules/umi_tools.smk"
+include: "rules/sicelore.smk"
+include: "rules/scnanogps.smk"
+
+
+rule nailpolish_all:
+    input:
+        expand(RESULTS_DIR + "/{sample}/nailpolish.csv", sample=ACTIVE_SAMPLES),
+        expand(RESULTS_DIR + "/{sample}/nailpolish.parquet", sample=ACTIVE_SAMPLES),
+        expand(RESULTS_DIR + "/{sample}/nailpolish_no_cluster.csv", sample=ACTIVE_SAMPLES),
+        expand(NP_DIR + "/{sample}/summary.html", sample=ACTIVE_SAMPLES),
+        expand(QC_DIR + "/{sample}", sample=ACTIVE_SAMPLES),
+        expand(NP_DIR + "/{sample}/consensus_slim.fastq", sample=ACTIVE_SAMPLES),
+        expand(ALIGN_DIR + "/{sample}/aligned_original.sam", sample=ACTIVE_SAMPLES),
+        expand(ALIGN_DIR + "/{sample}/aligned_slim.sam", sample=ACTIVE_SAMPLES)
+
+rule sicelore_all:
+    input:
+        expand(RESULTS_DIR + "/{sample}/sicelore.csv", sample=SAMPLES)
+
+rule umi_tools_all:
+    input:
+        expand(RESULTS_DIR + "/{sample}/umitools_bedtools.csv", sample=SAMPLES)
