@@ -3,7 +3,7 @@
 # dependencies = ["tqdm"]
 # ///
 
-# the purpose of this script is to generate a dataset with the correct LB
+# the purpose of this script is to generate a dataset with the correct UB, CB
 # tags added
 
 import sys
@@ -11,7 +11,7 @@ from tqdm import tqdm
 
 BARCODES_FILE = "/vast/projects/davidson_longread/cheng.o/proj/25.06.17-np-benchmark/snakemake_bulk/datasets_bulk/longbench_barcodes/H146_universal_clusters.csv"
 FASTQ = "/vast/projects/davidson_longread/cheng.o/proj/25.06.17-np-benchmark/snakemake_bulk/datasets_bulk/longbench_fastq/H146_bulk_ONT.fastq"
-OUTPUT_FASTQ = "/vast/projects/davidson_longread/cheng.o/data/fastq_for_nailpolish/longbench_bulk_H146_padded_stripped_barcodes.fastq"
+OUTPUT_FASTQ = "longbench_bulk_H146_raw.fastq"
 
 table = {}
 with open(BARCODES_FILE) as f:
