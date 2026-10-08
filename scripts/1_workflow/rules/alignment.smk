@@ -1,7 +1,7 @@
 rule minimap2_align:
     input:
         consensus=NP_DIR + "/{sample}/consensus.fastq",
-        ref=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["genome"]
+        ref=lambda wildcards: SAMPLES[wildcards.sample]["genome"]
     output:
         sam=ALIGN_DIR + "/{sample}/called.sam"
     threads: config["minimap_threads"]
@@ -26,7 +26,7 @@ rule minimap2_align:
 rule minimap2_align_slim:
     input:
         consensus_slim=NP_DIR + "/{sample}/consensus_slim.fastq",
-        ref=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["genome"]
+        ref=lambda wildcards: SAMPLES[wildcards.sample]["genome"]
     output:
         sam=ALIGN_DIR + "/{sample}/aligned_slim.sam"
     threads: config["minimap_threads"]
@@ -49,8 +49,8 @@ rule minimap2_align_slim:
 
 rule minimap2_align_original:
     input:
-        fastq=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["path"],
-        ref=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["genome"]
+        fastq=lambda wildcards: SAMPLES[wildcards.sample]["path"],
+        ref=lambda wildcards: SAMPLES[wildcards.sample]["genome"]
     output:
         sam=ALIGN_DIR + "/{sample}/aligned_original.sam"
     threads: config["minimap_threads"]

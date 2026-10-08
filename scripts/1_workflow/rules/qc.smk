@@ -1,6 +1,6 @@
 rule fastqc:
     input:
-        fastq=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["path"]
+        fastq=lambda wildcards: SAMPLES[wildcards.sample]["path"]
     output:
         directory(QC_DIR + "/{sample}")
     resources:

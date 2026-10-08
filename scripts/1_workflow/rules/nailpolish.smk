@@ -1,13 +1,13 @@
 rule np_index:
     input:
-        fastq=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["path"]
+        fastq=lambda wildcards: SAMPLES[wildcards.sample]["path"]
     output:
         fastq=NP_DIR + "/{sample}/file.fastq",
         index=NP_DIR + "/{sample}/file.fastq.nailpolish.idx",
         log=NP_DIR + "/{sample}/np_index.log"
     params:
         nailpolish=config["nailpolish"],
-        barcode_regex=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["barcode_regex"]
+        barcode_regex=lambda wildcards: SAMPLES[wildcards.sample]["barcode_regex"]
     threads: 1
     resources:
         mem_mb=32000,
@@ -54,7 +54,7 @@ rule np_consensus:
         log=NP_DIR + "/{sample}/np.log"
     params:
         nailpolish=config["nailpolish"],
-        custom_params=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
+        custom_params=lambda wildcards: SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
     threads: config["threads"]
     resources:
         mem_mb=64000,
@@ -80,7 +80,7 @@ rule np_consensus_slim:
         log=NP_DIR + "/{sample}/np2.log"
     params:
         nailpolish=config["nailpolish"],
-        custom_params=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
+        custom_params=lambda wildcards: SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
     threads: config["threads"]
     resources:
         mem_mb=32000,
@@ -120,7 +120,7 @@ rule np_consensus_no_cluster:
         log=NP_DIR + "/{sample}/np_no_cluster.log"
     params:
         nailpolish=config["nailpolish"],
-        custom_params=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
+        custom_params=lambda wildcards: SAMPLES[wildcards.sample].get("nailpolish_consensus_params", "")
     threads: config["threads"]
     resources:
         mem_mb=64000,
@@ -137,7 +137,7 @@ rule np_consensus_no_cluster:
 rule minimap2_align_no_cluster:
     input:
         consensus=NP_DIR + "/{sample}/consensus_no_cluster.fastq",
-        ref=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["genome"]
+        ref=lambda wildcards: SAMPLES[wildcards.sample]["genome"]
     output:
         sam=ALIGN_DIR + "/{sample}/called_no_cluster.sam"
     threads: config["minimap_threads"]

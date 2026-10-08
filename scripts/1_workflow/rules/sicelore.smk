@@ -67,7 +67,7 @@ rule sicelore_assign_gg:
 rule minimap2_align_sicelore:
     input:
         consensus=SICELORE_DIR + "/{sample}/sicelore_with_gg_tag.fasta",
-        ref=lambda wildcards: ACTIVE_SAMPLES[wildcards.sample]["genome"]
+        ref=lambda wildcards: SAMPLES[wildcards.sample]["genome"]
     output:
         sam=RESULTS_DIR + "/{sample}/sicelore.sam"
     threads: config["minimap_threads"]
