@@ -4,7 +4,10 @@
 # ///
 
 # the purpose of this script is to generate a dataset with the correct UB, CB
-# tags added
+# tags added.
+
+# You can download H146_universal_clusters.csv and H146_bulk_ONT.fastq from
+# the LongBench S3 bucket.
 
 import sys
 from tqdm import tqdm

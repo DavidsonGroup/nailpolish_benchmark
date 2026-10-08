@@ -16,7 +16,7 @@
 #SBATCH --output=logs/%j.out
 
 zcat SC_ONT.fastq.gz | \
-        flexiplex -d 10x3v3 -p 32 -n LB_SC_ONT -k all_barcodes.txt > SC_ONT.demultiplexed.fastq
+        flexiplex -d 10x3v3 -p 32 -n LB_SC_ONT -k all_barcodes.txt > lb_sc_ont.fastq
 
 zcat SC_PB.fastq.gz | \
-        flexiplex -d 10x3v3 -p 32 -n LB_SC_PB -k all_barcodes.txt > SC_PB.demultiplexed.fastq
+        flexiplex -d 10x3v3 -p 32 -n LB_SC_PB -k all_barcodes.txt > lb_sc_pb.fastq

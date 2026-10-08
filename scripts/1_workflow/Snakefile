@@ -36,19 +36,18 @@ include: "rules/alignment.smk"
 include: "rules/results.smk"
 include: "rules/umi_tools.smk"
 include: "rules/sicelore.smk"
-include: "rules/scnanogps.smk"
 
 
 rule nailpolish_all:
     input:
-        expand(RESULTS_DIR + "/{sample}/nailpolish.csv", sample=ACTIVE_SAMPLES),
-        expand(RESULTS_DIR + "/{sample}/nailpolish.parquet", sample=ACTIVE_SAMPLES),
-        expand(RESULTS_DIR + "/{sample}/nailpolish_no_cluster.csv", sample=ACTIVE_SAMPLES),
-        expand(NP_DIR + "/{sample}/summary.html", sample=ACTIVE_SAMPLES),
-        expand(QC_DIR + "/{sample}", sample=ACTIVE_SAMPLES),
-        expand(NP_DIR + "/{sample}/consensus_slim.fastq", sample=ACTIVE_SAMPLES),
-        expand(ALIGN_DIR + "/{sample}/aligned_original.sam", sample=ACTIVE_SAMPLES),
-        expand(ALIGN_DIR + "/{sample}/aligned_slim.sam", sample=ACTIVE_SAMPLES)
+        expand(RESULTS_DIR + "/{sample}/nailpolish.csv", sample=SAMPLES),
+        expand(RESULTS_DIR + "/{sample}/nailpolish.parquet", sample=SAMPLES),
+        expand(RESULTS_DIR + "/{sample}/nailpolish_no_cluster.csv", sample=SAMPLES),
+        expand(NP_DIR + "/{sample}/summary.html", sample=SAMPLES),
+        expand(QC_DIR + "/{sample}", sample=SAMPLES),
+        expand(NP_DIR + "/{sample}/consensus_slim.fastq", sample=SAMPLES),
+        expand(ALIGN_DIR + "/{sample}/aligned_original.sam", sample=SAMPLES),
+        expand(ALIGN_DIR + "/{sample}/aligned_slim.sam", sample=SAMPLES)
 
 rule sicelore_all:
     input:

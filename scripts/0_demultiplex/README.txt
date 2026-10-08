@@ -1,6 +1,8 @@
 This folder contains demultiplexing scripts to reproduce the input .fastq files
 provided to the pipeline.
 
+Accessions for each dataset can be found in the Supplementary Tables.
+
 LR-split-seq, LongBench SC ONT, LongBench SC PB, LongBench Bulk H146,
 Visium, DNM1L, RAGE-seq:
     See the corresponding folder in this directory.

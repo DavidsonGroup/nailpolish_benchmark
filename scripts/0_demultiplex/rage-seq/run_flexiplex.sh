@@ -19,5 +19,5 @@
 
 #SBATCH --output=logs/%j.out
 
-zcat ERR3273784.fastq.gz | flexiplex -d 10x3v2 -k barcodes_corrected.txt -p 16 -e 4 > ERR3273784_demultiplexed.fastq
+zcat ERR3273784.fastq.gz | flexiplex -d 10x3v2 -k barcodes_corrected.txt -p 16 -e 4 > rage-seq.fastq
 

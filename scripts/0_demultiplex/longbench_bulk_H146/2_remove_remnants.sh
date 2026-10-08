@@ -16,7 +16,7 @@ module load cutadapt/
 
 input_fastq="temp/longbench_bulk_H146_trimmed.fastq"
 intermediate_fastq="temp/longbench_bulk_H146_remove_adapters.fastq"
-output_fastq="longbench_bulk_H146_cleaned.fastq"
+output_fastq="longbench_bulk_H146_proc.fastq"
 
 # -O: Requires ≥18 bp overlap; -e: Allows 10% errors; -m: Keeps reads ≥100 nt (-m) after trimming, -j: Uses 16 threads   
 # Step 1: fixed adapters
